@@ -58,11 +58,15 @@ namespace Yafc.Parser
     }
 
     // Placeholder for the real deserializer (Yafc.Parser/Data/FactorioDataDeserializer.cs).
-    // The parser checks a version constant and constructs/invokes the deserializer to build a Project.
-    // Stubbed to satisfy the compiler; full port comes after the Lua side is proven working.
+    // While the real deserializer isn't ported, this stub captures a snapshot of data.raw
+    // so the UI can surface basic statistics and validate that mods loaded correctly.
     internal sealed class FactorioDataDeserializer
     {
         public static readonly Version v2_0 = new Version(2, 0);
+
+        // Static because the real parser is static too; one parse = one snapshot.
+        // Cleared on each call to LoadData so stale data from a previous parse can't leak through.
+        public static Yafc.App.Services.DataRawSnapshot? LastSnapshot { get; private set; }
 
         public FactorioDataDeserializer(Version gameVersion) { }
 
@@ -76,7 +80,21 @@ namespace Yafc.Parser
             bool renderIcons,
             bool useLatestSave)
         {
-            Yafc.App.Services.AppLog.Write("FactorioDataDeserializer stub: LoadData called but deserializer not ported yet");
+            LastSnapshot = null;
+
+            try
+            {
+                LastSnapshot = Yafc.App.Services.DataRawInspector.BuildSnapshot(data);
+                Yafc.App.Services.AppLog.Write(
+                    $"DataRawInspector: captured snapshot with {LastSnapshot.TotalTypes} types, " +
+                    $"{LastSnapshot.TotalPrototypes} prototypes");
+            }
+            catch (System.Exception ex)
+            {
+                Yafc.App.Services.AppLog.Write($"DataRawInspector failed: {ex.GetType().Name}: {ex.Message}");
+            }
+
+            // Real deserializer will return a populated Project here; stub keeps returning null.
             return null;
         }
     }

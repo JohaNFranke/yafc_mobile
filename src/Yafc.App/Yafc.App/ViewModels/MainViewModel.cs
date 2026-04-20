@@ -417,10 +417,25 @@ public partial class MainViewModel : ViewModelBase
                     useLatestSave: false,
                     renderIcons: false);
 
+
+                    
                 int errCount = errorCollector.All.Count;
-                Status = errCount == 0
-                    ? "Parse concluido!"
-                    : $"Parse terminou com {errCount} erro(s). Veja o log.";
+
+                // Pega o snapshot de data.raw preenchido pelo stub do deserializer
+                var snapshot = Yafc.Parser.FactorioDataDeserializer.LastSnapshot;
+                if (snapshot is not null)
+                {
+                    FullErrorText = Yafc.App.Services.DataRawInspector.FormatSnapshot(snapshot);
+                    Status = errCount == 0
+                        ? $"OK: {snapshot.TotalTypes} tipos, {snapshot.TotalPrototypes} prototypes"
+                        : $"Parse com {errCount} erro(s). Veja log.";
+                }
+                else
+                {
+                    Status = errCount == 0
+                        ? "Parse concluido, mas sem snapshot"
+                        : $"Parse terminou com {errCount} erro(s). Veja o log.";
+                }
 
                 AppLog.Write($"=== LoadGameData END: {errCount} erros ===");
                 foreach (var (msg, sev) in errorCollector.All)
