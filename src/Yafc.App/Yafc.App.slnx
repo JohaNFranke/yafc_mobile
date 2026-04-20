@@ -1,0 +1,11 @@
+﻿<Solution>
+  <Project Path="Yafc.App.Android/Yafc.App.Android.csproj">
+    <Deploy />
+  </Project>
+  <Project Path="Yafc.App.Browser/Yafc.App.Browser.csproj" />
+  <Project Path="Yafc.App.Desktop/Yafc.App.Desktop.csproj" />
+  <Project Path="Yafc.App.iOS/Yafc.App.iOS.csproj">
+    <Deploy />
+  </Project>
+  <Project Path="Yafc.App/Yafc.App.csproj" />
+</Solution>

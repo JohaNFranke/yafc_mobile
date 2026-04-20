@@ -1,0 +1,211 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Yafc.App.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
+             x:Class="Yafc.App.Views.MainView"
+             x:DataType="vm:MainViewModel">
+  <Design.DataContext>
+    <vm:MainViewModel />
+  </Design.DataContext>
+
+  <Grid RowDefinitions="Auto,Auto,*" Margin="12">
+    <WrapPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+      <Button Content="Abrir arquivo..." Command="{Binding PickAndLoadFileCommand}" Margin="0,0,4,4"/>
+      <Button Content="Salvar como..." Command="{Binding PickAndSaveFileCommand}" Margin="0,0,4,4"/>
+      <Button Content="Salvar" Command="{Binding SaveFileCommand}" Margin="0,0,4,4"/>
+      <Button Content="Ver log" Command="{Binding ShowLogCommand}" Margin="0,0,4,4"/>
+      <Button Content="Limpar log" Command="{Binding ClearLogCommand}" Margin="0,0,4,4"/>
+      <Button Content="Exportar log" Command="{Binding ExportLogCommand}" Margin="0,0,4,4"/>
+      <Button Content="Testar Lua" Command="{Binding TestLuaCommand}" Margin="0,0,4,4"/>
+      <Button Content="Testar Lua52 nativo" Command="{Binding TestLuaNativeCommand}" Margin="0,0,4,4"/>
+      <Button Content="Importar Factorio" Command="{Binding ImportFactorioDataCommand}" Margin="0,0,4,4"/>
+      <Button Content="Listar mods" Command="{Binding ListModsCommand}" Margin="0,0,4,4"/>
+      <Button Content="Ordenar mods" Command="{Binding SortModsCommand}" Margin="0,0,4,4"/>
+      <Button Content="Carregar data" Command="{Binding LoadGameDataCommand}" Margin="0,0,4,4"/>
+      <TextBlock Text="{Binding FilePath}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="400" Margin="4,0,0,4"/>
+    </WrapPanel>
+
+    <StackPanel Grid.Row="1" Margin="0,0,0,8">
+      <TextBlock Text="{Binding Status}" FontWeight="Bold"/>
+      <ScrollViewer MaxHeight="120" HorizontalScrollBarVisibility="Auto">
+        <SelectableTextBlock Text="{Binding FullErrorText}" Foreground="Red"
+                             IsVisible="{Binding FullErrorText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                             TextWrapping="Wrap"/>
+      </ScrollViewer>
+    </StackPanel>
+
+    <TabControl Grid.Row="2">
+
+      <TabItem Header="Projeto">
+        <ScrollViewer>
+          <StackPanel Spacing="12" Margin="4">
+
+            <Expander Header="Paginas" IsExpanded="True">
+              <StackPanel Spacing="4">
+                <ListBox ItemsSource="{Binding Pages}"
+                         SelectedItem="{Binding SelectedPage}"
+                         DisplayMemberBinding="{Binding Summary}"
+                         MaxHeight="300"/>
+                <Button Content="Remover pagina selecionada"
+                        Command="{Binding RemovePageCommand}"
+                        HorizontalAlignment="Stretch"/>
+                <TextBlock Text="Nova pagina" FontWeight="Bold" Margin="0,8,0,0"/>
+                <TextBox Text="{Binding NewPageName}" Watermark="Nome"/>
+                <TextBox Text="{Binding NewPageIcon}" Watermark="Icon (ex: Recipe.stone-brick)"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <CheckBox Content="Summary" IsChecked="{Binding NewPageIsSummary}"/>
+                  <Button Content="Criar pagina" Command="{Binding AddPageCommand}"/>
+                </StackPanel>
+              </StackPanel>
+            </Expander>
+
+            <Expander Header="{Binding SelectedPage.Name, FallbackValue='Receitas (selecione uma pagina)'}"
+                      IsExpanded="True"
+                      IsVisible="{Binding SelectedPage, Converter={x:Static ObjectConverters.IsNotNull}}">
+              <StackPanel Spacing="4">
+                <TextBlock Text="Receitas" FontWeight="Bold"/>
+                <ListBox ItemsSource="{Binding SelectedPage.Recipes}"
+                         SelectedItem="{Binding SelectedPage.SelectedRecipe}"
+                         DisplayMemberBinding="{Binding Display}"
+                         MaxHeight="240"/>
+                <Button Content="Remover receita selecionada"
+                        Command="{Binding RemoveRecipeCommand}"
+                        HorizontalAlignment="Stretch"/>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                  <TextBox Text="{Binding NewRecipeName}" Watermark="nome-da-receita" Width="200"/>
+                  <Button Content="Adicionar" Command="{Binding AddRecipeCommand}"/>
+                </StackPanel>
+
+                <Border BorderBrush="Gray" BorderThickness="1" Padding="10" Margin="0,8,0,0"
+                        IsVisible="{Binding SelectedPage.SelectedRecipe, Converter={x:Static ObjectConverters.IsNotNull}}">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="Editar receita" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding SelectedPage.SelectedRecipe.RecipeName}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="Buildings (0 = auto):" VerticalAlignment="Center"/>
+                      <NumericUpDown Value="{Binding SelectedPage.SelectedRecipe.FixedBuildings}"
+                                     Minimum="0" Increment="1" Width="140"/>
+                    </StackPanel>
+                    <CheckBox Content="Habilitada" IsChecked="{Binding SelectedPage.SelectedRecipe.Enabled}"/>
+                  </StackPanel>
+                </Border>
+
+                <TextBlock Text="Links" FontWeight="Bold" Margin="0,8,0,0"/>
+                <ListBox ItemsSource="{Binding SelectedPage.Links}"
+                         SelectedItem="{Binding SelectedPage.SelectedLink}"
+                         DisplayMemberBinding="{Binding Display}"
+                         MaxHeight="200"/>
+
+                <Border BorderBrush="Gray" BorderThickness="1" Padding="10"
+                        IsVisible="{Binding SelectedPage.SelectedLink, Converter={x:Static ObjectConverters.IsNotNull}}">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="Editar link" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding SelectedPage.SelectedLink.GoodsName}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="Quantidade:" VerticalAlignment="Center"/>
+                      <NumericUpDown Value="{Binding SelectedPage.SelectedLink.Amount}"
+                                     Minimum="0" Increment="1" Width="140"/>
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </Expander>
+
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      
+
+      <TabItem Header="Configuracoes">
+        <ScrollViewer>
+          <StackPanel Spacing="12" Margin="4"
+                      DataContext="{Binding SettingsVm}"
+                      IsVisible="{Binding ., Converter={x:Static ObjectConverters.IsNotNull}}">
+
+            <Expander Header="Settings do projeto" IsExpanded="True">
+              <StackPanel Spacing="8">
+                <StackPanel>
+                  <TextBlock Text="Mining productivity"/>
+                  <NumericUpDown Value="{Binding MiningProductivity}" Increment="0.1"/>
+                </StackPanel>
+                <StackPanel>
+                  <TextBlock Text="Research speed bonus"/>
+                  <NumericUpDown Value="{Binding ResearchSpeedBonus}" Increment="0.1"/>
+                </StackPanel>
+                <StackPanel>
+                  <TextBlock Text="Research productivity"/>
+                  <NumericUpDown Value="{Binding ResearchProductivity}" Increment="0.1"/>
+                </StackPanel>
+                <StackPanel>
+                  <TextBlock Text="Reactor size X"/>
+                  <NumericUpDown Value="{Binding ReactorSizeX}" Increment="1" Minimum="1"/>
+                </StackPanel>
+                <StackPanel>
+                  <TextBlock Text="Reactor size Y"/>
+                  <NumericUpDown Value="{Binding ReactorSizeY}" Increment="1" Minimum="1"/>
+                </StackPanel>
+                <StackPanel>
+                  <TextBlock Text="Pollution cost modifier"/>
+                  <NumericUpDown Value="{Binding PollutionCostModifier}" Increment="0.1"/>
+                </StackPanel>
+                <StackPanel>
+                  <TextBlock Text="Spoiling rate"/>
+                  <NumericUpDown Value="{Binding SpoilingRate}" Increment="0.1"/>
+                </StackPanel>
+              </StackPanel>
+            </Expander>
+
+            <Expander Header="Preferencias" IsExpanded="False">
+              <StackPanel Spacing="8">
+                <StackPanel>
+                  <TextBlock Text="Time"/>
+                  <NumericUpDown Value="{Binding Time}" Minimum="1" Increment="1"/>
+                </StackPanel>
+                <StackPanel>
+                  <TextBlock Text="Default belt"/>
+                  <TextBox Text="{Binding DefaultBelt}"/>
+                </StackPanel>
+                <StackPanel>
+                  <TextBlock Text="Default inserter"/>
+                  <TextBox Text="{Binding DefaultInserter}"/>
+                </StackPanel>
+                <StackPanel>
+                  <TextBlock Text="Inserter capacity"/>
+                  <NumericUpDown Value="{Binding InserterCapacity}" Minimum="1" Increment="1"/>
+                </StackPanel>
+                <StackPanel>
+                  <TextBlock Text="Icon scale"/>
+                  <NumericUpDown Value="{Binding IconScale}" Minimum="0.1" Increment="0.1"/>
+                </StackPanel>
+                <StackPanel>
+                  <TextBlock Text="Max milestones/tooltip line"/>
+                  <NumericUpDown Value="{Binding MaxMilestonesPerTooltipLine}" Minimum="1" Increment="1"/>
+                </StackPanel>
+                <CheckBox Content="Show milestone on inaccessible" IsChecked="{Binding ShowMilestoneOnInaccessible}"/>
+              </StackPanel>
+            </Expander>
+
+            <Expander Header="Milestones" IsExpanded="False">
+              <StackPanel Spacing="8">
+                <TextBlock Text="Lista (Item.name, Technology.name, etc)"/>
+                <ListBox ItemsSource="{Binding Milestones}"
+                         SelectedItem="{Binding SelectedMilestone}"
+                         MaxHeight="300"/>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                  <Button Content="Remover" Command="{Binding RemoveMilestoneCommand}"/>
+                </StackPanel>
+                <TextBlock Text="Adicionar novo" FontWeight="Bold" Margin="0,8,0,0"/>
+                <TextBox Text="{Binding NewMilestone}" Watermark="Item.nome"/>
+                <Button Content="Adicionar" Command="{Binding AddMilestoneCommand}" HorizontalAlignment="Left"/>
+              </StackPanel>
+            </Expander>
+
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+    </TabControl>
+  </Grid>
+</UserControl>

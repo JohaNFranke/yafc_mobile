@@ -1,0 +1,49 @@
+# .NET build outputs
+bin/
+obj/
+*.user
+*.userosscache
+*.suo
+*.DotSettings.user
+
+# Visual Studio
+.vs/
+*.cache
+*.vspscc
+
+# VS Code
+.vscode/
+
+# Rider
+.idea/
+
+# Android build artifacts
+*.apk
+*.aab
+*.aar
+generated.xml
+generated_xml_stub
+
+# Native libs that we rebuild (but keep liblua52.so committed since it's important)
+# (Intencionalmente nao ignorando liblua52.so)
+
+# Logs
+*.log
+yafc-app.log
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Packages
+*.nupkg
+packages/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+
+# User-specific config
+local.properties
+*.keystore
