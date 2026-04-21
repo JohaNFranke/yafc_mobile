@@ -57,16 +57,15 @@ namespace Yafc.Parser
         public static bool netProduction;
     }
 
-    // Placeholder for the real deserializer (Yafc.Parser/Data/FactorioDataDeserializer.cs).
-    // While the real deserializer isn't ported, this stub captures a snapshot of data.raw
-    // so the UI can surface basic statistics and validate that mods loaded correctly.
+    // Bridges the real FactorioDeserializer into the parse pipeline.
+    // Captures both a lightweight DataRawSnapshot (for UI stats) and the full GameDatabase.
     internal sealed class FactorioDataDeserializer
     {
         public static readonly Version v2_0 = new Version(2, 0);
 
-        // Static because the real parser is static too; one parse = one snapshot.
-        // Cleared on each call to LoadData so stale data from a previous parse can't leak through.
+        // Statics cleared on each parse so stale data from a previous run cannot leak through.
         public static Yafc.App.Services.DataRawSnapshot? LastSnapshot { get; private set; }
+        public static Yafc.Model.Mobile.GameDatabase? LastDatabase { get; private set; }
 
         public FactorioDataDeserializer(Version gameVersion) { }
 
@@ -81,20 +80,29 @@ namespace Yafc.Parser
             bool useLatestSave)
         {
             LastSnapshot = null;
+            LastDatabase = null;
 
             try
             {
                 LastSnapshot = Yafc.App.Services.DataRawInspector.BuildSnapshot(data);
                 Yafc.App.Services.AppLog.Write(
-                    $"DataRawInspector: captured snapshot with {LastSnapshot.TotalTypes} types, " +
-                    $"{LastSnapshot.TotalPrototypes} prototypes");
+                    $"DataRawInspector: {LastSnapshot.TotalTypes} types, {LastSnapshot.TotalPrototypes} prototypes");
+
+                progress.Report(("Deserializando", "construindo GameDatabase..."));
+                var pool = new Yafc.App.Services.StringPool();
+                LastDatabase = FactorioDeserializer.Build(data, pool);
+                Yafc.App.Services.AppLog.Write(
+                    $"GameDatabase: {LastDatabase.Items.Count} items, " +
+                    $"{LastDatabase.Recipes.Count} recipes, " +
+                    $"{LastDatabase.Entities.Count} entities, " +
+                    $"{LastDatabase.Technologies.Count} technologies");
             }
             catch (System.Exception ex)
             {
-                Yafc.App.Services.AppLog.Write($"DataRawInspector failed: {ex.GetType().Name}: {ex.Message}");
+                Yafc.App.Services.AppLog.WriteException("FactorioDataDeserializer", ex);
             }
 
-            // Real deserializer will return a populated Project here; stub keeps returning null.
+            // Full Project (for solver) will be returned once the solver layer is ported.
             return null;
         }
     }

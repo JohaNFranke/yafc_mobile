@@ -361,7 +361,7 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void LoadGameData()
+    private async System.Threading.Tasks.Task LoadGameData()
     {
         if (string.IsNullOrWhiteSpace(FactorioCachePath))
         {
@@ -372,40 +372,35 @@ public partial class MainViewModel : ViewModelBase
         Status = "Preparando Yafc data...";
         AppLog.Write("=== LoadGameData START ===");
 
-        try
-        {
-            // 1. Extrair os arquivos Lua auxiliares para um diretorio de trabalho
-            var workDir = System.IO.Path.Combine(
-                System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
-                "YafcApp", "yafc-work");
-            Yafc.App.Services.YafcDataExtractor.ExtractTo(workDir);
+        // Extrair arquivos Lua antes de entrar no Task.Run (acesso a recursos embutidos é rápido)
+        var workDir = System.IO.Path.Combine(
+            System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
+            "YafcApp", "yafc-work");
+        Yafc.App.Services.YafcDataExtractor.ExtractTo(workDir);
 
-            // 2. FactorioDataSource.Parse procura "Data/Sandbox.lua" relativo ao current directory.
-            //    Trocar o working directory para apontar para nosso workDir.
+        var factorioPath = System.IO.Path.Combine(FactorioCachePath, "data");
+        var modPath = System.IO.Path.Combine(FactorioCachePath, "mods");
+        var projectPath = System.IO.Path.Combine(workDir, "yafc-project.yafc");
+
+        AppLog.Write($"factorioPath = {factorioPath}");
+        AppLog.Write($"modPath = {modPath}");
+
+        // Progress marshala de volta ao SynchronizationContext do Avalonia automaticamente
+        var progress = new System.Progress<(string major, string minor)>(p =>
+            Status = $"{p.major}: {p.minor}");
+
+        var errorCollector = new Yafc.Parser.ErrorCollector();
+        System.Exception? parseError = null;
+
+        // Parse roda no thread pool para nao bloquear a UI thread (evita ANR no Android)
+        await System.Threading.Tasks.Task.Run(() =>
+        {
+            // FactorioDataSource.Parse usa caminhos relativos ao CWD para carregar Data/Sandbox.lua
             var previousCwd = System.Environment.CurrentDirectory;
             System.Environment.CurrentDirectory = workDir;
-
             try
             {
-                var progress = new System.Progress<(string major, string minor)>(p =>
-                {
-                    Status = $"{p.major}: {p.minor}";
-                });
-
-                var errorCollector = new Yafc.Parser.ErrorCollector();
-
-                // factorioPath = <cache>/data (onde estao core, base, space-age, etc)
-                // modPath      = <cache>/mods (onde estao os mods do usuario)
-                var factorioPath = System.IO.Path.Combine(FactorioCachePath, "data");
-                var modPath = System.IO.Path.Combine(FactorioCachePath, "mods");
-                var projectPath = System.IO.Path.Combine(workDir, "yafc-project.yafc");
-                var locale = "en";
-
-                AppLog.Write($"factorioPath = {factorioPath}");
-                AppLog.Write($"modPath = {modPath}");
-
-                Status = "Chamando FactorioDataSource.Parse...";
-                var result = Yafc.Parser.FactorioDataSource.Parse(
+                Yafc.Parser.FactorioDataSource.Parse(
                     factorioPath: factorioPath,
                     modPath: modPath,
                     projectPath: projectPath,
@@ -413,44 +408,57 @@ public partial class MainViewModel : ViewModelBase
                     netProduction: false,
                     progress: progress,
                     errorCollector: errorCollector,
-                    locale: locale,
+                    locale: "en",
                     useLatestSave: false,
                     renderIcons: false);
-
-
-                    
-                int errCount = errorCollector.All.Count;
-
-                // Pega o snapshot de data.raw preenchido pelo stub do deserializer
-                var snapshot = Yafc.Parser.FactorioDataDeserializer.LastSnapshot;
-                if (snapshot is not null)
-                {
-                    FullErrorText = Yafc.App.Services.DataRawInspector.FormatSnapshot(snapshot);
-                    Status = errCount == 0
-                        ? $"OK: {snapshot.TotalTypes} tipos, {snapshot.TotalPrototypes} prototypes"
-                        : $"Parse com {errCount} erro(s). Veja log.";
-                }
-                else
-                {
-                    Status = errCount == 0
-                        ? "Parse concluido, mas sem snapshot"
-                        : $"Parse terminou com {errCount} erro(s). Veja o log.";
-                }
-
-                AppLog.Write($"=== LoadGameData END: {errCount} erros ===");
-                foreach (var (msg, sev) in errorCollector.All)
-                    AppLog.Write($"  [{sev}] {msg}");
+            }
+            catch (System.Exception ex)
+            {
+                parseError = ex;
             }
             finally
             {
                 System.Environment.CurrentDirectory = previousCwd;
             }
-        }
-        catch (System.Exception ex)
+        });
+
+        // De volta na UI thread — seguro acessar ObservableProperties aqui
+        if (parseError is not null)
         {
-            AppLog.WriteException("LoadGameData", ex);
-            FullErrorText = ex.ToString();
-            Status = $"Erro: {ex.Message}";
+            AppLog.WriteException("LoadGameData", parseError);
+            FullErrorText = parseError.ToString();
+            Status = $"Erro: {parseError.Message}";
+            return;
+        }
+
+        int errCount = errorCollector.All.Count;
+        AppLog.Write($"=== LoadGameData END: {errCount} erros ===");
+        foreach (var (msg, sev) in errorCollector.All)
+            AppLog.Write($"  [{sev}] {msg}");
+
+        var snapshot = Yafc.Parser.FactorioDataDeserializer.LastSnapshot;
+        var db = Yafc.Parser.FactorioDataDeserializer.LastDatabase;
+
+        if (snapshot is not null)
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine(Yafc.App.Services.DataRawInspector.FormatSnapshot(snapshot));
+            if (db is not null)
+            {
+                sb.AppendLine($"--- GameDatabase ---");
+                sb.AppendLine($"Items:        {db.Items.Count}");
+                sb.AppendLine($"Recipes:      {db.Recipes.Count}");
+                sb.AppendLine($"Entities:     {db.Entities.Count}");
+                sb.AppendLine($"Technologies: {db.Technologies.Count}");
+            }
+            FullErrorText = sb.ToString();
+            Status = errCount == 0
+                ? $"OK: {snapshot.TotalPrototypes} prototypes, {db?.Recipes.Count ?? 0} recipes"
+                : $"Parse com {errCount} erro(s). Veja log.";
+        }
+        else
+        {
+            Status = errCount == 0 ? "Parse concluido, sem snapshot" : $"Parse com {errCount} erro(s).";
         }
     }
 
