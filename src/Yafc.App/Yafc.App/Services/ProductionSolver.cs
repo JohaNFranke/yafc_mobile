@@ -134,12 +134,17 @@ public static class ProductionSolver
         outputs.Sort((a, b) => string.CompareOrdinal(a.ItemName, b.ItemName));
         activeRecipes.Sort((a, b) => string.CompareOrdinal(a.Category, b.Category));
 
+        var goalFlows = new List<ResourceFlow>(goals.Count);
+        foreach (var (itemName, rate) in goals)
+            goalFlows.Add(new ResourceFlow(itemName, GetType(db, itemName), rate));
+
         return new ProductionPlan
         {
             Feasible = true,
             ActiveRecipes = activeRecipes,
             Inputs = inputs,
             Outputs = outputs,
+            Goals = goalFlows,
         };
     }
 

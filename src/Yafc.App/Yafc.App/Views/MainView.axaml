@@ -134,8 +134,11 @@
         <ScrollViewer>
           <StackPanel Spacing="12" Margin="4">
 
-            <TextBlock FontWeight="Bold" FontSize="16"
-                       Text="{Binding CurrentPlanSummary, StringFormat='Plano: {0}'}"/>
+            <StackPanel Orientation="Horizontal" Spacing="12">
+              <TextBlock FontWeight="Bold" FontSize="16" VerticalAlignment="Center"
+                         Text="{Binding CurrentPlanSummary, StringFormat='Plano: {0}'}"/>
+              <Button Content="Aplicar ao projeto" Command="{Binding ApplyPlanCommand}"/>
+            </StackPanel>
 
             <Expander Header="Receitas ativas" IsExpanded="True">
               <ItemsControl ItemsSource="{Binding CurrentPlan.ActiveRecipes}">

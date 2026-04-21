@@ -11,6 +11,7 @@ public sealed class ProductionPlan
     public required IReadOnlyList<RecipeSolution> ActiveRecipes { get; init; }
     public required IReadOnlyList<ResourceFlow> Inputs { get; init; }
     public required IReadOnlyList<ResourceFlow> Outputs { get; init; }
+    public IReadOnlyList<ResourceFlow> Goals { get; init; } = [];
     public string? ErrorMessage { get; init; }
 
     public static readonly ProductionPlan Infeasible = new()

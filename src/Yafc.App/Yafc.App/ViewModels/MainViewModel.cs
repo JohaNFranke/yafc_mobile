@@ -628,6 +628,51 @@ public partial class MainViewModel : ViewModelBase
         Status = $"Solução: {plan.ActiveRecipes.Count} receitas, {plan.Inputs.Count} insumos";
     }
 
+    [RelayCommand]
+    private void ApplyPlan()
+    {
+        if (CurrentPlan is null || !CurrentPlan.Feasible)
+        {
+            Status = "Nenhum plano para aplicar";
+            return;
+        }
+
+        // Ensure a project exists so the plan can be persisted on Save.
+        if (_project is null)
+        {
+            _project = new YafcProject { YafcVersion = "0" };
+            SettingsVm = new SettingsViewModel(_project);
+        }
+
+        // Fall back: if no page selected or selected page isn't a ProductionTable,
+        // create a new one named after the goal.
+        var target = SelectedPage;
+        if (target is null || !target.IsProductionTable)
+        {
+            var goalName = CurrentPlan.Goals.Count > 0
+                ? CurrentPlan.Goals[0].ItemName
+                : "plano";
+            var guid = System.Guid.NewGuid().ToString("N");
+            var page = new ProjectPage
+            {
+                ContentType = "Yafc.Model.ProductionTable",
+                Guid = guid,
+                Name = $"Plano: {goalName}",
+                RawContent = System.Text.Json.JsonSerializer.SerializeToElement(
+                    new ProductionTable(), ProjectFile.Options),
+                Scroll = 0,
+            };
+            _project.Pages.Add(page);
+            _project.DisplayPages.Add(guid);
+            target = new PageViewModel(page);
+            Pages.Add(target);
+            SelectedPage = target;
+        }
+
+        int count = target.ApplyPlan(CurrentPlan);
+        Status = $"Plano aplicado a '{target.Name}': {count} receitas";
+    }
+
 }
 
 public partial class PageViewModel : ViewModelBase
@@ -698,6 +743,53 @@ public partial class PageViewModel : ViewModelBase
         OnPropertyChanged(nameof(Summary));
         return vm.RecipeName;
     }
+
+    public bool IsProductionTable => _table is not null;
+
+    public int ApplyPlan(ProductionPlan plan)
+    {
+        if (_table is null) return 0;
+
+        _table.Recipes.Clear();
+        Recipes.Clear();
+        _table.Links.Clear();
+        Links.Clear();
+
+        foreach (var sol in plan.ActiveRecipes)
+        {
+            var row = new RecipeRow
+            {
+                Recipe = new TypedRef { Target = $"Recipe.{sol.RecipeName}", Quality = "Quality.normal" },
+                Enabled = true,
+                FixedBuildings = sol.Rate,
+            };
+            _table.Recipes.Add(row);
+            Recipes.Add(new RecipeViewModel(row));
+        }
+
+        // Goals become hard-linked outputs; raw inputs become unconstrained links.
+        foreach (var g in plan.Goals)
+        {
+            var link = new ProductionLink
+            {
+                Goods = new TypedRef { Target = $"{TypePrefix(g.Type)}.{g.ItemName}", Quality = "Quality.normal" },
+                Amount = g.Rate,
+            };
+            _table.Links.Add(link);
+            Links.Add(new LinkViewModel(link));
+        }
+
+        OnPropertyChanged(nameof(RecipeCount));
+        OnPropertyChanged(nameof(LinkCount));
+        OnPropertyChanged(nameof(Summary));
+        return plan.ActiveRecipes.Count;
+    }
+
+    private static string TypePrefix(GameGoodsType t) => t switch
+    {
+        GameGoodsType.Fluid => "Fluid",
+        _ => "Item",
+    };
 }
 
 public partial class RecipeViewModel : ViewModelBase
