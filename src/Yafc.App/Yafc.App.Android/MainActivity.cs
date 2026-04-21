@@ -16,6 +16,7 @@ public class MainActivity : AvaloniaMainActivity<App>
     {
         // Load native libs before Avalonia initializes
         LuaNativeLoader.Initialize(this);
+        OrToolsNativeLoader.Initialize(this);
         base.OnCreate(savedInstanceState);
     }
 

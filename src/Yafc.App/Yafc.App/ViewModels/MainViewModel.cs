@@ -49,6 +49,12 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private string _factorioCachePath = "";
 
+    [ObservableProperty]
+    private string _solveTargetItem = "";
+
+    [ObservableProperty]
+    private float _solveTargetRate = 1f;
+
     [RelayCommand]
     private void LoadFile()
     {
@@ -560,6 +566,73 @@ public partial class MainViewModel : ViewModelBase
         {
             Status = $"Erro ao salvar: {ex.Message}";
         }
+    }
+
+    [RelayCommand]
+    private async System.Threading.Tasks.Task Solve()
+    {
+        var db = Yafc.Parser.FactorioDataDeserializer.LastDatabase;
+        if (db is null)
+        {
+            Status = "Carregue os dados do jogo primeiro (Carregar Dados)";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(SolveTargetItem))
+        {
+            Status = "Digite o nome do item alvo";
+            return;
+        }
+
+        if (!db.Items.ContainsKey(SolveTargetItem.Trim()) && !db.Recipes.ContainsKey(SolveTargetItem.Trim()))
+        {
+            Status = $"Item '{SolveTargetItem}' não encontrado no GameDatabase";
+            return;
+        }
+
+        Status = "Resolvendo...";
+        var target = SolveTargetItem.Trim();
+        var rate = SolveTargetRate;
+
+        ProductionPlan plan = ProductionPlan.Infeasible;
+        await System.Threading.Tasks.Task.Run(() =>
+        {
+            plan = ProductionSolver.Solve(db, [(target, rate)]);
+        });
+
+        if (!plan.Feasible || plan.ErrorMessage is not null)
+        {
+            Status = plan.ErrorMessage ?? $"Sem solução para '{target}'";
+            return;
+        }
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"=== Plano de Produção: {rate}/s de {target} ===");
+        sb.AppendLine();
+        sb.AppendLine($"Receitas ativas: {plan.ActiveRecipes.Count}");
+        string? lastCategory = null;
+        foreach (var (name, category, recipeRate) in plan.ActiveRecipes)
+        {
+            if (category != lastCategory)
+            {
+                sb.AppendLine($"  [{category}]");
+                lastCategory = category;
+            }
+            sb.AppendLine($"    {name}: {recipeRate:F4}/s");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("Insumos brutos:");
+        foreach (var (item, _, flowRate) in plan.Inputs)
+            sb.AppendLine($"  {item}: {flowRate:F4}/s");
+
+        sb.AppendLine();
+        sb.AppendLine("Saídas:");
+        foreach (var (item, _, flowRate) in plan.Outputs)
+            sb.AppendLine($"  {item}: {flowRate:F4}/s");
+
+        FullErrorText = sb.ToString();
+        Status = $"Solução: {plan.ActiveRecipes.Count} receitas, {plan.Inputs.Count} insumos";
     }
 
 }

@@ -15,6 +15,10 @@
     <AndroidNativeLibrary Include="lib\arm64-v8a\liblua52.so">
       <Abi>arm64-v8a</Abi>
     </AndroidNativeLibrary>
+    <!-- libGoogle.OrTools.so: compile from source via scripts/build-ortools-android.ps1 -->
+    <AndroidNativeLibrary Include="lib\arm64-v8a\libGoogle.OrTools.so" Condition="Exists('lib\arm64-v8a\libGoogle.OrTools.so')">
+      <Abi>arm64-v8a</Abi>
+    </AndroidNativeLibrary>
   </ItemGroup>
 
   <ItemGroup>
