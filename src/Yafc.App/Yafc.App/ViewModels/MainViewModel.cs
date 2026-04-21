@@ -57,6 +57,12 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private float _solveTargetRate = 1f;
 
+    [ObservableProperty]
+    private ProductionPlan? _currentPlan;
+
+    [ObservableProperty]
+    private string _currentPlanSummary = "";
+
     [RelayCommand]
     private void LoadFile()
     {
@@ -611,36 +617,14 @@ public partial class MainViewModel : ViewModelBase
 
         if (!plan.Feasible || plan.ErrorMessage is not null)
         {
+            CurrentPlan = null;
+            CurrentPlanSummary = "";
             Status = plan.ErrorMessage ?? $"Sem solução para '{target}'";
             return;
         }
 
-        var sb = new System.Text.StringBuilder();
-        sb.AppendLine($"=== Plano de Produção: {rate}/s de {target} ===");
-        sb.AppendLine();
-        sb.AppendLine($"Receitas ativas: {plan.ActiveRecipes.Count}");
-        string? lastCategory = null;
-        foreach (var (name, category, recipeRate) in plan.ActiveRecipes)
-        {
-            if (category != lastCategory)
-            {
-                sb.AppendLine($"  [{category}]");
-                lastCategory = category;
-            }
-            sb.AppendLine($"    {name}: {recipeRate:F4}/s");
-        }
-
-        sb.AppendLine();
-        sb.AppendLine("Insumos brutos:");
-        foreach (var (item, _, flowRate) in plan.Inputs)
-            sb.AppendLine($"  {item}: {flowRate:F4}/s");
-
-        sb.AppendLine();
-        sb.AppendLine("Saídas:");
-        foreach (var (item, _, flowRate) in plan.Outputs)
-            sb.AppendLine($"  {item}: {flowRate:F4}/s");
-
-        FullErrorText = sb.ToString();
+        CurrentPlan = plan;
+        CurrentPlanSummary = $"{rate:F2}/s de {target}";
         Status = $"Solução: {plan.ActiveRecipes.Count} receitas, {plan.Inputs.Count} insumos";
     }
 

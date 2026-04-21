@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Yafc.App.ViewModels"
+             xmlns:model="using:Yafc.Model.Mobile"
              mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
              x:Class="Yafc.App.Views.MainView"
              x:DataType="vm:MainViewModel">
@@ -127,6 +128,70 @@
         </ScrollViewer>
       </TabItem>
       
+
+      <TabItem Header="Plano"
+               IsVisible="{Binding CurrentPlan, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <ScrollViewer>
+          <StackPanel Spacing="12" Margin="4">
+
+            <TextBlock FontWeight="Bold" FontSize="16"
+                       Text="{Binding CurrentPlanSummary, StringFormat='Plano: {0}'}"/>
+
+            <Expander Header="Receitas ativas" IsExpanded="True">
+              <ItemsControl ItemsSource="{Binding CurrentPlan.ActiveRecipes}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="model:RecipeSolution">
+                    <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,2,0,2">
+                      <TextBlock Grid.Column="0" Text="{Binding RecipeName}" VerticalAlignment="Center"/>
+                      <Border Grid.Column="1" Background="#223" Padding="6,2" Margin="8,0,8,0" CornerRadius="3">
+                        <TextBlock Text="{Binding Category}" FontSize="11" Foreground="#aab"/>
+                      </Border>
+                      <TextBlock Grid.Column="2" VerticalAlignment="Center"
+                                 Text="{Binding Rate, StringFormat='{}{0:F4}/s'}"
+                                 FontFamily="Consolas,monospace"/>
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Expander>
+
+            <Expander Header="Insumos brutos" IsExpanded="True">
+              <ItemsControl ItemsSource="{Binding CurrentPlan.Inputs}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="model:ResourceFlow">
+                    <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,2,0,2">
+                      <TextBlock Grid.Column="0" Text="{Binding ItemName}" VerticalAlignment="Center"/>
+                      <TextBlock Grid.Column="1" Text="{Binding Type}" FontSize="11"
+                                 Foreground="#aab" Margin="8,0,8,0" VerticalAlignment="Center"/>
+                      <TextBlock Grid.Column="2" VerticalAlignment="Center"
+                                 Text="{Binding Rate, StringFormat='{}{0:F4}/s'}"
+                                 FontFamily="Consolas,monospace"/>
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Expander>
+
+            <Expander Header="Saidas" IsExpanded="True">
+              <ItemsControl ItemsSource="{Binding CurrentPlan.Outputs}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="model:ResourceFlow">
+                    <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,2,0,2">
+                      <TextBlock Grid.Column="0" Text="{Binding ItemName}" VerticalAlignment="Center"/>
+                      <TextBlock Grid.Column="1" Text="{Binding Type}" FontSize="11"
+                                 Foreground="#aab" Margin="8,0,8,0" VerticalAlignment="Center"/>
+                      <TextBlock Grid.Column="2" VerticalAlignment="Center"
+                                 Text="{Binding Rate, StringFormat='{}{0:F4}/s'}"
+                                 FontFamily="Consolas,monospace"/>
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Expander>
+
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
 
       <TabItem Header="Configuracoes">
         <ScrollViewer>
