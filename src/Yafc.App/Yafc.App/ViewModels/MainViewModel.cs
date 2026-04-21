@@ -39,6 +39,8 @@ public partial class MainViewModel : ViewModelBase
 
     public ObservableCollection<PageViewModel> Pages { get; } = new();
 
+    public ObservableCollection<string> AvailableItems { get; } = new();
+
     private YafcProject? _project;
 
     public System.Func<System.Threading.Tasks.Task<(System.IO.Stream? stream, string? displayName)>>? PickFileStreamAsync { get; set; }
@@ -445,6 +447,13 @@ public partial class MainViewModel : ViewModelBase
         var snapshot = Yafc.Parser.FactorioDataDeserializer.LastSnapshot;
         var db = Yafc.Parser.FactorioDataDeserializer.LastDatabase;
 
+        if (db is not null)
+        {
+            AvailableItems.Clear();
+            foreach (var name in db.Items.Keys.OrderBy(k => k, System.StringComparer.Ordinal))
+                AvailableItems.Add(name);
+        }
+
         if (snapshot is not null)
         {
             var sb = new System.Text.StringBuilder();
@@ -459,7 +468,7 @@ public partial class MainViewModel : ViewModelBase
             }
             FullErrorText = sb.ToString();
             Status = errCount == 0
-                ? $"OK: {snapshot.TotalPrototypes} prototypes, {db?.Recipes.Count ?? 0} recipes"
+                ? $"OK: {snapshot.TotalPrototypes} prototypes, {db?.Recipes.Count ?? 0} recipes, {AvailableItems.Count} items para solver"
                 : $"Parse com {errCount} erro(s). Veja log.";
         }
         else

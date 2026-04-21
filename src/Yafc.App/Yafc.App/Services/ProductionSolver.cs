@@ -30,8 +30,11 @@ public static class ProductionSolver
         if (solver is null)
             return ProductionPlan.Error("GLOP solver não pôde ser criado.");
 
-        // ── 1. Index enabled recipes ──────────────────────────────────────────
-        var recipes = db.Recipes.Values.Where(r => r.Enabled).ToArray();
+        // ── 1. Index all recipes ──────────────────────────────────────────────
+        // Yafc assume que toda a árvore de tecnologia está disponível; recipes
+        // com Enabled=false são apenas "requerem research" e ainda são válidos
+        // no plano. Filtrar aqui tornava a maioria dos itens INFEASIBLE.
+        var recipes = db.Recipes.Values.ToArray();
         if (recipes.Length == 0) return ProductionPlan.Infeasible;
 
         var vars = new Variable[recipes.Length];

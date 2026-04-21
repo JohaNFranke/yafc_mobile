@@ -24,13 +24,23 @@
       <Button Content="Listar mods" Command="{Binding ListModsCommand}" Margin="0,0,4,4"/>
       <Button Content="Ordenar mods" Command="{Binding SortModsCommand}" Margin="0,0,4,4"/>
       <Button Content="Carregar data" Command="{Binding LoadGameDataCommand}" Margin="0,0,4,4"/>
+      <Separator Width="1" Height="20" Background="Gray" Margin="4,0"/>
+      <AutoCompleteBox Text="{Binding SolveTargetItem}"
+                       ItemsSource="{Binding AvailableItems}"
+                       FilterMode="ContainsOrdinal"
+                       Watermark="item (ex: iron-plate)"
+                       MinimumPrefixLength="1"
+                       MaxDropDownHeight="280"
+                       Width="220" Margin="0,0,4,4"/>
+      <NumericUpDown Value="{Binding SolveTargetRate}" Minimum="0.001" Increment="1" Width="100" Margin="0,0,4,4"/>
+      <Button Content="Resolver" Command="{Binding SolveCommand}" Margin="0,0,4,4"/>
       <TextBlock Text="{Binding FilePath}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="400" Margin="4,0,0,4"/>
     </WrapPanel>
 
     <StackPanel Grid.Row="1" Margin="0,0,0,8">
       <TextBlock Text="{Binding Status}" FontWeight="Bold"/>
       <ScrollViewer MaxHeight="120" HorizontalScrollBarVisibility="Auto">
-        <SelectableTextBlock Text="{Binding FullErrorText}" Foreground="Red"
+        <SelectableTextBlock Text="{Binding FullErrorText}"
                              IsVisible="{Binding FullErrorText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                              TextWrapping="Wrap"/>
       </ScrollViewer>
