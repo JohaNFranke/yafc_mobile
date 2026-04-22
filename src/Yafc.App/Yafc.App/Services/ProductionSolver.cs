@@ -130,9 +130,15 @@ public static class ProductionSolver
                 outputs.Add(new ResourceFlow(item, GetType(db, item), net));
         }
 
-        inputs.Sort((a, b) => string.CompareOrdinal(a.ItemName, b.ItemName));
-        outputs.Sort((a, b) => string.CompareOrdinal(a.ItemName, b.ItemName));
-        activeRecipes.Sort((a, b) => string.CompareOrdinal(a.Category, b.Category));
+        // Largest flows first — users look at bottlenecks, not alphabetical order.
+        inputs.Sort((a, b) => b.Rate.CompareTo(a.Rate));
+        outputs.Sort((a, b) => b.Rate.CompareTo(a.Rate));
+        // Recipes stay grouped by category for visual scanning, then by rate within.
+        activeRecipes.Sort((a, b) =>
+        {
+            int c = string.CompareOrdinal(a.Category, b.Category);
+            return c != 0 ? c : b.Rate.CompareTo(a.Rate);
+        });
 
         var goalFlows = new List<ResourceFlow>(goals.Count);
         foreach (var (itemName, rate) in goals)
