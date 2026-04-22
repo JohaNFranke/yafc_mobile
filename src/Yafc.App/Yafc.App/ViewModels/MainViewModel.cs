@@ -761,7 +761,10 @@ public partial class PageViewModel : ViewModelBase
             {
                 Recipe = new TypedRef { Target = $"Recipe.{sol.RecipeName}", Quality = "Quality.normal" },
                 Enabled = true,
-                FixedBuildings = sol.Rate,
+                // FixedBuildings stays 0 ("auto"); the user will pin the crafter later
+                // via entity selection. We record the solver rate in Description so
+                // the target throughput is visible even before an entity is chosen.
+                Description = $"Target: {sol.Rate:F4}/s · {sol.CraftingTime:F2}s/craft",
             };
             _table.Recipes.Add(row);
             Recipes.Add(new RecipeViewModel(row));

@@ -144,12 +144,15 @@
               <ItemsControl ItemsSource="{Binding CurrentPlan.ActiveRecipes}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="model:RecipeSolution">
-                    <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,2,0,2">
+                    <Grid ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,2,0,2">
                       <TextBlock Grid.Column="0" Text="{Binding RecipeName}" VerticalAlignment="Center"/>
                       <Border Grid.Column="1" Background="#223" Padding="6,2" Margin="8,0,8,0" CornerRadius="3">
                         <TextBlock Text="{Binding Category}" FontSize="11" Foreground="#aab"/>
                       </Border>
-                      <TextBlock Grid.Column="2" VerticalAlignment="Center"
+                      <TextBlock Grid.Column="2" VerticalAlignment="Center" Width="88" TextAlignment="Right"
+                                 Text="{Binding BuildingsAtBaseSpeed, StringFormat='{}{0:F2}x @1.0'}"
+                                 FontFamily="Consolas,monospace" Foreground="#cdb"/>
+                      <TextBlock Grid.Column="3" VerticalAlignment="Center" Width="90" TextAlignment="Right"
                                  Text="{Binding Rate, StringFormat='{}{0:F4}/s'}"
                                  FontFamily="Consolas,monospace"/>
                     </Grid>

@@ -104,7 +104,7 @@ public static class ProductionSolver
             if (rate < 1e-7f) continue;
 
             var r = recipes[i];
-            activeRecipes.Add(new RecipeSolution(r.Name, r.Category, rate));
+            activeRecipes.Add(new RecipeSolution(r.Name, r.Category, rate, r.EnergyRequired));
 
             foreach (var prod in r.Products)
                 produced[prod.Name] = produced.GetValueOrDefault(prod.Name) + rate * prod.Amount * prod.Probability;

@@ -2,7 +2,13 @@ using System.Collections.Generic;
 
 namespace Yafc.Model.Mobile;
 
-public readonly record struct RecipeSolution(string RecipeName, string Category, float Rate);
+public readonly record struct RecipeSolution(string RecipeName, string Category, float Rate, float CraftingTime)
+{
+    // Buildings needed assuming crafting speed = 1.0. The real estimate requires
+    // picking an entity; this is the lower bound (faster crafters → fewer buildings).
+    public float BuildingsAtBaseSpeed => Rate * CraftingTime;
+}
+
 public readonly record struct ResourceFlow(string ItemName, GameGoodsType Type, float Rate);
 
 public sealed class ProductionPlan
