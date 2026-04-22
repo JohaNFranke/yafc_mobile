@@ -624,7 +624,13 @@ public partial class MainViewModel : ViewModelBase
         }
 
         CurrentPlan = plan;
-        CurrentPlanSummary = $"{rate:F2}/s de {target}";
+
+        // Per-category totals so the user sees factory footprint at a glance.
+        var byCategory = plan.ActiveRecipes
+            .GroupBy(r => r.Category, System.StringComparer.Ordinal)
+            .OrderBy(g => g.Key, System.StringComparer.Ordinal)
+            .Select(g => $"{g.Key}:{g.Sum(r => r.BuildingsAtBaseSpeed):F2}x");
+        CurrentPlanSummary = $"{rate:F2}/s de {target}  ·  " + string.Join(" · ", byCategory);
         Status = $"Solução: {plan.ActiveRecipes.Count} receitas, {plan.Inputs.Count} insumos";
     }
 
